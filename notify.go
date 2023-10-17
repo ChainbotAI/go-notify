@@ -28,6 +28,7 @@ const (
 	PlatformEmail              = "Email"
 	PlatformSes                = "AwsEmail"
 	PlatformLark               = "Lark"
+	PlatformArgus              = "Argus"
 )
 
 type Notify struct {
