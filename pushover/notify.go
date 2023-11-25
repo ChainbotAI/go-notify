@@ -19,6 +19,8 @@ type Options struct {
 	User     string `json:"user"`
 	Message  string `json:"message"`
 	Priority int    `json:"priority"`
+	Retry    int    `json:"retry"`
+	Expire   int    `json:"expire"`
 }
 
 type client struct {
