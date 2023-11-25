@@ -16,11 +16,11 @@ const (
 type Options struct {
 	Token string `json:"token"`
 	// User may be either a user key or a group key.
-	User     string `json:"user"`
-	Message  string `json:"message"`
-	Priority int    `json:"priority"`
-	Retry    int    `json:"retry"`
-	Expire   int    `json:"expire"`
+	User     string  `json:"user"`
+	Message  string  `json:"message"`
+	Priority int     `json:"priority"`
+	Retry    float64 `json:"retry"`
+	Expire   float64 `json:"expire"`
 }
 
 type client struct {

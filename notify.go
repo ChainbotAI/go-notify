@@ -95,10 +95,10 @@ func (n *Notify) sendPushOverNotify(msg string) error {
 		Priority: n.config.Priority,
 	}
 	if retry, exist := n.config.Others["retryInterval"]; exist {
-		options.Retry, _ = strconv.Atoi(retry)
+		options.Retry, _ = strconv.ParseFloat(retry, 64)
 	}
 	if expire, exist := n.config.Others["retryExpire"]; exist {
-		options.Expire, _ = strconv.Atoi(expire)
+		options.Expire, _ = strconv.ParseFloat(expire, 64)
 	}
 	app := pushover.New(options)
 	err := app.Send(msg)
