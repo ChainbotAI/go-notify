@@ -89,11 +89,18 @@ func (n *Notify) Send(msg string) error {
 }
 
 func (n *Notify) sendPushOverNotify(msg string) error {
-	app := pushover.New(pushover.Options{
+	options := pushover.Options{
 		Token:    n.config.Token,
 		User:     n.config.Channel,
 		Priority: n.config.Priority,
-	})
+	}
+	if retry, exist := n.config.Others["retryInterval"]; exist {
+		options.Retry, _ = strconv.Atoi(retry)
+	}
+	if expire, exist := n.config.Others["retryExpire"]; exist {
+		options.Expire, _ = strconv.Atoi(expire)
+	}
+	app := pushover.New(options)
 	err := app.Send(msg)
 	return err
 }
