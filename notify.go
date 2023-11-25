@@ -52,6 +52,7 @@ type Config struct {
 	Password string
 	Host     string
 	Priority int
+	Others   map[string]string
 }
 
 func NewNotify(config *Config) *Notify {
