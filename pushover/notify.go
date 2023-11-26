@@ -1,10 +1,8 @@
 package pushover
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/imroc/req"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -47,9 +45,6 @@ func (c *client) Send(message string) error {
 		return errors.New("missing message")
 	}
 	c.opt.Message = message
-	body, _ := json.Marshal(c.opt)
-	logrus.Infof("pushover request body: %s", string(body))
-
 	resp, err := req.Post(ApiURL, req.BodyJSON(c.opt))
 	if err != nil {
 		return nil
