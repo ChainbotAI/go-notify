@@ -1,7 +1,6 @@
 package pushover
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/imroc/req"
@@ -47,10 +46,7 @@ func (c *client) Send(message string) error {
 		return errors.New("missing message")
 	}
 	c.opt.Message = message
-	inrec, _ := json.Marshal(c.opt)
-	params := &req.Param{}
-	json.Unmarshal(inrec, params)
-	resp, err := req.Post(ApiURL, *params)
+	resp, err := req.Post(ApiURL, req.BodyJSON(c.opt))
 	if err != nil {
 		return nil
 	}
