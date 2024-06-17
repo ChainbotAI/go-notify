@@ -3,7 +3,7 @@ package telegram
 import (
 	"errors"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/ChainbotAI/telegram-bot-api"
 )
 
 const (
@@ -18,6 +18,7 @@ type Options struct {
 	Token    string `json:"token"`
 	Channel  int64  `json:"channel"`
 	ChatName string `json:"chat_name"`
+	TopicId  int    `json:"topic_id"`
 	// User may be either a user key or a group key.
 }
 
@@ -50,7 +51,11 @@ func (c *client) Send(message string) error {
 	}
 	var msg tgbotapi.MessageConfig
 	if c.opt.Channel != 0 {
-		msg = tgbotapi.NewMessage(c.opt.Channel, message)
+		if c.opt.TopicId != 0 {
+			msg = tgbotapi.NewTopicMessage(c.opt.Channel, c.opt.TopicId, message)
+		} else {
+			msg = tgbotapi.NewMessage(c.opt.Channel, message)
+		}
 	} else {
 		msg = tgbotapi.NewMessageToChannel(c.opt.ChatName, message)
 	}

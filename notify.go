@@ -136,18 +136,21 @@ func (n *Notify) sendDiscordNotify(msg string) error {
 func (n *Notify) sendTelegramNotify(msg string) error {
 	var _channel int64
 	var _chatName string
+	var _topicId int64
 	if strings.Contains(n.config.Channel, "@") {
 		_channel = 0
 		_chatName = n.config.Channel
 	} else {
 		_channel, _ = strconv.ParseInt(n.config.Channel, 10, 64)
 		_chatName = ""
+		_topicId, _ = strconv.ParseInt(n.config.Others["topic_id"], 10, 64)
 	}
 
 	app := telegram.New(telegram.Options{
 		Token:    n.config.Token,
 		Channel:  _channel,
 		ChatName: _chatName,
+		TopicId:  int(_topicId),
 	})
 	err := app.Send(msg)
 	return err
