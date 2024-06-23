@@ -149,7 +149,7 @@ func (n *Notify) sendTelegramNotify(msg string) error {
 	// 新版本中用户输入@开头的 name 时，会查询对应的 chat_id 并存入 others["chat_id"]
 	if n.config.Others["chat_id"] != "" {
 		chatId, _ := strconv.ParseInt(n.config.Others["chat_id"], 10, 64)
-		if chatId > 0 {
+		if chatId != 0 {
 			_channel = chatId
 		}
 	}
