@@ -143,9 +143,9 @@ func (n *Notify) sendTelegramNotify(msg string) error {
 	} else {
 		_channel, _ = strconv.ParseInt(n.config.Channel, 10, 64)
 		_chatName = ""
-		_topicId, _ = strconv.ParseInt(n.config.Others["topic_id"], 10, 64)
 	}
 
+	_topicId, _ = strconv.ParseInt(n.config.Others["topic_id"], 10, 64)
 	// 新版本中用户输入@开头的 name 时，会查询对应的 chat_id 并存入 others["chat_id"]
 	if n.config.Others["chat_id"] != "" {
 		chatId, _ := strconv.ParseInt(n.config.Others["chat_id"], 10, 64)
