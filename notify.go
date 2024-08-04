@@ -14,6 +14,8 @@ import (
 	"github.com/ChainbotAI/go-notify/ses"
 	"github.com/ChainbotAI/go-notify/slack"
 	"github.com/ChainbotAI/go-notify/telegram"
+	"github.com/sirupsen/logrus"
+	tb "gopkg.in/telebot.v3"
 )
 
 type Platform string
@@ -31,6 +33,12 @@ const (
 	PlatformArgus              = "Argus"
 )
 
+type ChannelType string
+
+const (
+	ChannelTypeTgBot ChannelType = "TgBot"
+)
+
 type Notify struct {
 	config *Config
 }
@@ -44,15 +52,17 @@ type Config struct {
 	Area    string
 	Sender  string
 
-	Token    string
-	Channel  string
-	Source   string
-	Severity string
-	User     string
-	Password string
-	Host     string
-	Priority int
-	Others   map[string]string
+	Token       string
+	Channel     string
+	ChannelType ChannelType
+	Source      string
+	Severity    string
+	User        string
+	Password    string
+	Host        string
+	Priority    int
+	Others      map[string]string
+	ChatIDs     []int64
 }
 
 func NewNotify(config *Config) *Notify {
@@ -134,6 +144,10 @@ func (n *Notify) sendDiscordNotify(msg string) error {
 }
 
 func (n *Notify) sendTelegramNotify(msg string) error {
+	if n.config.ChannelType == ChannelTypeTgBot {
+		return n.sendTelegramBotNotify(msg)
+	}
+
 	var _channel int64
 	var _chatName string
 	var _topicId int64
@@ -162,6 +176,20 @@ func (n *Notify) sendTelegramNotify(msg string) error {
 	})
 	err := app.Send(msg)
 	return err
+}
+
+func (n *Notify) sendTelegramBotNotify(msg string) error {
+	botToken := n.config.Token
+	bot, _ := tb.NewBot(tb.Settings{
+		Token:   botToken,
+		Offline: true,
+	})
+	for _, chatID := range n.config.ChatIDs {
+		if _, err := bot.Send(tb.ChatID(chatID), msg); err != nil {
+			logrus.Errorf("fail to send tg bot msg, err: %v", err)
+		}
+	}
+	return nil
 }
 
 func (n *Notify) sendDingTalkNotify(msg string) error {
