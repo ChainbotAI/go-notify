@@ -15,6 +15,7 @@ import (
 	"github.com/ChainbotAI/go-notify/slack"
 	"github.com/ChainbotAI/go-notify/telegram"
 	"github.com/sirupsen/logrus"
+	"github.com/sourcegraph/conc"
 	tb "gopkg.in/telebot.v3"
 )
 
@@ -33,10 +34,13 @@ const (
 	PlatformArgus              = "Argus"
 )
 
-type ChannelType string
+type NotifyChannelType string
 
 const (
-	ChannelTypeTgBot ChannelType = "TgBot"
+	NotifyChannelTypeTgGroup   NotifyChannelType = "Group"
+	NotifyChannelTypeTgChannel NotifyChannelType = "Channel"
+	NotifyChannelTypeTgUser    NotifyChannelType = "User"
+	NotifyChannelTypeTgBot     NotifyChannelType = "Bot"
 )
 
 type Notify struct {
@@ -54,7 +58,7 @@ type Config struct {
 
 	Token       string
 	Channel     string
-	ChannelType ChannelType
+	ChannelType NotifyChannelType
 	Source      string
 	Severity    string
 	User        string
@@ -144,7 +148,7 @@ func (n *Notify) sendDiscordNotify(msg string) error {
 }
 
 func (n *Notify) sendTelegramNotify(msg string) error {
-	if n.config.ChannelType == ChannelTypeTgBot {
+	if n.config.ChannelType == NotifyChannelTypeTgBot {
 		return n.sendTelegramBotNotify(msg)
 	}
 
@@ -184,11 +188,16 @@ func (n *Notify) sendTelegramBotNotify(msg string) error {
 		Token:   botToken,
 		Offline: true,
 	})
+	var wg conc.WaitGroup
 	for _, chatID := range n.config.ChatIDs {
-		if _, err := bot.Send(tb.ChatID(chatID), msg); err != nil {
-			logrus.Errorf("fail to send tg bot msg, err: %v", err)
-		}
+		chatIDObj := tb.ChatID(chatID)
+		wg.Go(func() {
+			if _, err := bot.Send(chatIDObj, msg); err != nil {
+				logrus.Errorf("fail to send tg bot msg, err: %v", err)
+			}
+		})
 	}
+	wg.Wait()
 	return nil
 }
 
