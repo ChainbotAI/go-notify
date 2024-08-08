@@ -184,16 +184,19 @@ func (n *Notify) sendTelegramNotify(msg string) error {
 
 func (n *Notify) sendTelegramBotNotify(msg string) error {
 	botToken := n.config.Token
-	bot, _ := tb.NewBot(tb.Settings{
-		Token:   botToken,
-		Offline: true,
+	bot, err := tb.NewBot(tb.Settings{
+		Token: botToken,
 	})
+	if err != nil {
+		logrus.Errorf("[TgBot] init tg bot err: %v", err)
+		return err
+	}
 	var wg conc.WaitGroup
 	for _, chatID := range n.config.ChatIDs {
 		chatIDObj := tb.ChatID(chatID)
 		wg.Go(func() {
 			if _, err := bot.Send(chatIDObj, msg); err != nil {
-				logrus.Errorf("fail to send tg bot msg, err: %v", err)
+				logrus.Errorf("[TgBot] fail to send tg bot msg, err: %v", err)
 			}
 		})
 	}
