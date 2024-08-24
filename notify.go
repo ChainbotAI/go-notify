@@ -178,6 +178,9 @@ func (n *Notify) sendTelegramNotify(msg string) error {
 		ChatName: _chatName,
 		TopicId:  int(_topicId),
 	})
+	if app == nil {
+		return errors.New("create telegram client err")
+	}
 	err := app.Send(msg)
 	return err
 }

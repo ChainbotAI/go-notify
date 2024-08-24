@@ -3,7 +3,9 @@ package telegram
 import (
 	"errors"
 	"fmt"
+
 	tgbotapi "github.com/ChainbotAI/telegram-bot-api"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -30,6 +32,7 @@ type client struct {
 func New(opt Options) *client {
 	api, err := tgbotapi.NewBotAPI(opt.Token)
 	if err != nil {
+		logrus.Errorf("create tgbot api err: %v, token: %s", err, opt.Token)
 		return nil
 	}
 
