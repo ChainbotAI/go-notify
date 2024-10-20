@@ -1,10 +1,14 @@
 package notify
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/ChainbotAI/base-gokit/datatypes/types"
 	"github.com/ChainbotAI/go-notify/dingtalk"
 	"github.com/ChainbotAI/go-notify/discord"
 	"github.com/ChainbotAI/go-notify/email"
@@ -14,6 +18,7 @@ import (
 	"github.com/ChainbotAI/go-notify/ses"
 	"github.com/ChainbotAI/go-notify/slack"
 	"github.com/ChainbotAI/go-notify/telegram"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/sourcegraph/conc"
 	tb "gopkg.in/telebot.v3"
@@ -75,7 +80,11 @@ func NewNotify(config *Config) *Notify {
 	}
 }
 
-func (n *Notify) Send(msg string) error {
+type ExtendMsg struct {
+	Intent *types.TxIntent
+}
+
+func (n *Notify) Send(msg string, extendMsg *ExtendMsg) error {
 	switch n.config.Platform {
 	case PlatformPushover:
 		return n.sendPushOverNotify(msg)
@@ -86,7 +95,7 @@ func (n *Notify) Send(msg string) error {
 	case PlatformDiscord:
 		return n.sendDiscordNotify(msg)
 	case PlatformTelegram:
-		return n.sendTelegramNotify(msg)
+		return n.sendTelegramNotify(msg, extendMsg)
 	case PlatformDingTalk:
 		return n.sendDingTalkNotify(msg)
 	case PlatformEmail:
@@ -147,9 +156,9 @@ func (n *Notify) sendDiscordNotify(msg string) error {
 	return err
 }
 
-func (n *Notify) sendTelegramNotify(msg string) error {
+func (n *Notify) sendTelegramNotify(msg string, extendMsg *ExtendMsg) error {
 	if n.config.ChannelType == NotifyChannelTypeTgBot {
-		return n.sendTelegramBotNotify(msg)
+		return n.sendTelegramBotNotify(msg, extendMsg)
 	}
 
 	var _channel int64
@@ -185,7 +194,51 @@ func (n *Notify) sendTelegramNotify(msg string) error {
 	return err
 }
 
-func (n *Notify) sendTelegramBotNotify(msg string) error {
+func LinkToPage(botId, path string, data interface{}) string {
+	jsonBytes, _ := json.Marshal(map[string]interface{}{
+		"p": path,
+		"d": data,
+	})
+	base64Bytes := base64.StdEncoding.EncodeToString(jsonBytes)
+	endpoint := fmt.Sprintf(
+		"%s?startapp=%s",
+		fmt.Sprintf("https://t.me/%s/swap", botId),
+		base64Bytes,
+	)
+	return endpoint
+}
+
+func makeTradeMenu(swapIntent *types.SwapIntent) *tb.ReplyMarkup {
+	tradeSelector := &tb.ReplyMarkup{
+		Selective: true,
+	}
+
+	var side string
+	var tokenAddr string
+	if swapIntent.BuyToken == common.HexToAddress("0x") {
+		side = "SELL"
+		tokenAddr = swapIntent.SellToken.Hex()
+	} else if swapIntent.SellToken == common.HexToAddress("0x") {
+		side = "BUY"
+		tokenAddr = swapIntent.BuyToken.Hex()
+	} else {
+		return nil
+	}
+
+	data := map[string]string{
+		"s": side,
+		"t": tokenAddr,
+	}
+
+	tradeSelector.Inline(
+		tradeSelector.Row(
+			tradeSelector.URL("Buy", LinkToPage("official_swapbot", "/trade", data)),
+		),
+	)
+	return tradeSelector
+}
+
+func (n *Notify) sendTelegramBotNotify(msg string, extendMsg *ExtendMsg) error {
 	botToken := n.config.Token
 	bot, err := tb.NewBot(tb.Settings{
 		Token: botToken,
@@ -197,8 +250,14 @@ func (n *Notify) sendTelegramBotNotify(msg string) error {
 	var wg conc.WaitGroup
 	for _, chatID := range n.config.ChatIDs {
 		chatIDObj := tb.ChatID(chatID)
+		var menu *tb.ReplyMarkup
+		if extendMsg != nil && extendMsg.Intent != nil && len(extendMsg.Intent.SwapIntents) == 1 {
+			// 根据传入的intent去构建不同的menu
+			menu = makeTradeMenu(extendMsg.Intent.SwapIntents[0])
+		}
+
 		wg.Go(func() {
-			if _, err := bot.Send(chatIDObj, msg); err != nil {
+			if _, err := bot.Send(chatIDObj, msg, menu); err != nil {
 				logrus.Errorf("[TgBot] fail to send tg bot msg, err: %v", err)
 			}
 		})
