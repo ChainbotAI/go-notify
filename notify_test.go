@@ -160,7 +160,7 @@ func TestNotify_Send(t *testing.T) {
 			n := &Notify{
 				config: tt.fields.config,
 			}
-			err := n.Send(tt.args.msg, nil)
+			err := n.Send(tt.args.msg)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
