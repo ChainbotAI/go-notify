@@ -4,8 +4,6 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/ChainbotAI/base-gokit/datatypes/types"
-
 	"github.com/ChainbotAI/go-notify/dingtalk"
 	"github.com/ChainbotAI/go-notify/discord"
 	"github.com/ChainbotAI/go-notify/email"
@@ -70,10 +68,6 @@ func NewNotify(config *Config) *Notify {
 	return &Notify{
 		config: config,
 	}
-}
-
-type ExtendMsg struct {
-	Intent *types.TxIntent
 }
 
 func (n *Notify) Send(msg string) error {
